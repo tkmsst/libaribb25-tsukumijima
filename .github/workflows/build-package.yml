@@ -1,0 +1,91 @@
+name: Package
+on: push
+
+jobs:
+  windows:
+    name: Windows Package
+    runs-on: windows-2019
+    steps:
+      - name: setup msbuild
+        uses: microsoft/setup-msbuild@v2
+      - uses: actions/checkout@v4
+      - name: build
+        run: |
+          msbuild arib_std_b25.sln /t:Build /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v142
+          msbuild arib_std_b25.sln /t:Build /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v142
+      - name: get output name
+        id: get_output_name
+        run: |
+          $version = (Get-Content aribb25/td.c | Select-String -Pattern '#define VERSION_STRING "(.*)"').Matches.Groups[1].Value
+          echo "archive_path=libaribb25_${version}_windows.zip" >> $ENV:GITHUB_OUTPUT
+      - name: package
+        run: |
+          mkdir libaribb25/
+          mkdir libaribb25/32bit/
+          mkdir libaribb25/64bit/
+          Copy-Item -Path ".\Win32\Release\*" -Destination ".\libaribb25\32bit\" -Recurse -Force
+          Copy-Item -Path ".\x64\Release\*" -Destination ".\libaribb25\64bit\" -Recurse -Force
+          Copy-Item -Path libaribb25\32bit\libaribb1.dll -Destination libaribb25\32bit\B1Decoder.dll -Force
+          Copy-Item -Path libaribb25\64bit\libaribb1.dll -Destination libaribb25\64bit\B1Decoder.dll -Force
+          Copy-Item -Path libaribb25\32bit\libaribb25.dll -Destination libaribb25\32bit\B25Decoder.dll -Force
+          Copy-Item -Path libaribb25\64bit\libaribb25.dll -Destination libaribb25\64bit\B25Decoder.dll -Force
+          7z a -tzip ${{ steps.get_output_name.outputs.archive_path }} libaribb25
+      - name: save artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.get_output_name.outputs.archive_path }}
+          path: ${{ steps.get_output_name.outputs.archive_path }}
+
+  deb-package:
+    name: Debian Package
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup
+        run: sudo apt-get install -y build-essential cmake cmake-data libpcsclite-dev pkg-config
+      - name: build
+        run: |
+          cmake -B build -DUSE_AVX2=on -DCMAKE_INSTALL_PREFIX=/usr
+          cd build
+          sudo make package
+      - name: get output name
+        id: get_output_name
+        run: |
+          echo "deb_path=$(ls build/libaribb25_*.deb)" >> "$GITHUB_OUTPUT"
+          echo "deb_file=$(basename $(ls build/libaribb25_*.deb))" >> "$GITHUB_OUTPUT"
+      - name: save artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.get_output_name.outputs.deb_file }}
+          path: ${{ steps.get_output_name.outputs.deb_path }}
+
+  deb-package-arm:
+    name: Debian Package (ARM)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: setup
+        uses: docker/build-push-action@v5
+        with:
+          context: .github/workflows/
+          tags: arm64v8/ubuntu:build
+          build-args: IMAGE=arm64v8/ubuntu:20.04
+          cache-from: type=gha,scope=arm64v8/ubuntu
+          cache-to: type=gha,scope=arm64v8/ubuntu,mode=max
+          load: true
+      - name: build
+        run: |
+          docker run --rm -i -v $(pwd):/work -w /work -e CLICOLOR_FORCE=1 arm64v8/ubuntu:build bash -c \
+            'cmake -B build -DCMAKE_INSTALL_PREFIX=/usr && cd build && make package'
+      - name: get output name
+        id: get_output_name
+        run: |
+          echo "deb_path=$(ls build/libaribb25_*.deb)" >> "$GITHUB_OUTPUT"
+          echo "deb_file=$(basename $(ls build/libaribb25_*.deb))" >> "$GITHUB_OUTPUT"
+      - name: save artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.get_output_name.outputs.deb_file }}
+          path: ${{ steps.get_output_name.outputs.deb_path }}

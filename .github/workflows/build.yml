@@ -1,0 +1,122 @@
+name: Build
+on: push
+
+jobs:
+  ubuntu:
+    name: Ubuntu
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+          - ubuntu-22.04
+        cc: [gcc, clang]
+        include:
+          - cc: gcc
+            cxx: g++
+          - cc: clang
+            cxx: clang++
+    runs-on: ${{ matrix.os }}
+    env:
+      CLICOLOR_FORCE: 1
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup
+        run: sudo apt-get install -y build-essential clang cmake cmake-data libpcsclite-dev
+      - name: configure
+        run: |
+          cmake --version
+          cmake -B build -DCMAKE_C_COMPILER=${{ matrix.cc }} -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: |
+          ./build/b1 2>&1 | grep --color=always "ARIB STD-B1"
+          ./build/b25 2>&1 | grep --color=always "ARIB STD-B25"
+          ./build/arib-b1-stream-test --help 2>&1 | grep --color=always "ARIB STD-B1"
+          ./build/arib-b25-stream-test --help 2>&1 | grep --color=always "ARIB STD-B25"
+
+  arm:
+    name: ARM
+    strategy:
+      matrix:
+        image:
+          - arm64v8/ubuntu
+          - arm64v8/debian
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: setup
+        uses: docker/build-push-action@v5
+        with:
+          context: .github/workflows/
+          tags: ${{ matrix.image }}:build
+          build-args: IMAGE=${{ matrix.image }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,scope=${{ matrix.image }},mode=max
+          load: true
+      - name: configure
+        run: |
+          mkdir build
+          docker run --rm -i -v $(pwd):/work -w /work/build -e CLICOLOR_FORCE=1 ${{ matrix.image }}:build bash -c 'cmake --version && cmake ..'
+      - name: build
+        run: docker run --rm -i -v $(pwd):/work -w /work/build -e CLICOLOR_FORCE=1 ${{ matrix.image }}:build cmake --build .
+      - name: test
+        run: |
+          docker run --rm -i -v $(pwd):/work -w /work/build -e CLICOLOR_FORCE=1 ${{ matrix.image }}:build bash -c './b1 2>&1 | grep --color=always "ARIB STD-B1"'
+          docker run --rm -i -v $(pwd):/work -w /work/build -e CLICOLOR_FORCE=1 ${{ matrix.image }}:build bash -c './b25 2>&1 | grep --color=always "ARIB STD-B25"'
+          docker run --rm -i -v $(pwd):/work -w /work/build -e CLICOLOR_FORCE=1 ${{ matrix.image }}:build bash -c './arib-b1-stream-test --help 2>&1 | grep --color=always "ARIB STD-B1"'
+          docker run --rm -i -v $(pwd):/work -w /work/build -e CLICOLOR_FORCE=1 ${{ matrix.image }}:build bash -c './arib-b25-stream-test --help 2>&1 | grep --color=always "ARIB STD-B25"'
+
+  macos:
+    name: macOS
+    strategy:
+      matrix:
+        os:
+          - macos-12
+          - macos-13
+    runs-on: ${{ matrix.os }}
+    env:
+      CLICOLOR_FORCE: 1
+    steps:
+      - uses: actions/checkout@v4
+      - name: configure
+        run: |
+          cmake --version
+          cmake -B build
+      - name: build
+        run: cmake --build build
+      - name: test
+        run: |
+          ./build/b1 2>&1 | grep --color=always "ARIB STD-B1"
+          ./build/b25 2>&1 | grep --color=always "ARIB STD-B25"
+          ./build/arib-b1-stream-test --help 2>&1 | grep --color=always "ARIB STD-B1"
+          ./build/arib-b25-stream-test --help 2>&1 | grep --color=always "ARIB STD-B25"
+
+  windows:
+    name: Windows
+    strategy:
+      matrix:
+        os:
+          - windows-2019
+          - windows-2022
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: setup msbuild
+        uses: microsoft/setup-msbuild@v2
+      - uses: actions/checkout@v4
+      - name: build
+        run: |
+          msbuild arib_std_b25.sln /t:Build /p:Configuration=Release /p:Platform=Win32 /p:PlatformToolset=v142
+          msbuild arib_std_b25.sln /t:Build /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v142
+      - name: test
+        run: |
+          Win32\Release\b1.exe 2>&1 | findstr "ARIB STD-B1"
+          x64\Release\b1.exe 2>&1 | findstr "ARIB STD-B1"
+          Win32\Release\b25.exe 2>&1 | findstr "ARIB STD-B25"
+          x64\Release\b25.exe 2>&1 | findstr "ARIB STD-B25"
+          Win32\Release\arib-b1-stream-test.exe --help 2>&1 | findstr "ARIB STD-B1"
+          x64\Release\arib-b1-stream-test.exe --help 2>&1 | findstr "ARIB STD-B1"
+          Win32\Release\arib-b25-stream-test.exe --help 2>&1 | findstr "ARIB STD-B25"
+          x64\Release\arib-b25-stream-test.exe --help 2>&1 | findstr "ARIB STD-B25"
