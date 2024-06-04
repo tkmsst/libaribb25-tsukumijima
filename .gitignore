@@ -249,11 +249,8 @@ cmake_install.cmake
 Makefile
 Makefile.dep
 config.h
-b1
 b25
-libaribb1.so*
 libaribb25.so*
-version_b1.rc
 version_b25.rc
 *.o
 *.pc
