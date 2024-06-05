@@ -119,7 +119,7 @@ static B_CAS_CARD_PRIVATE_DATA *private_data(void *bcas);
 static void teardown(B_CAS_CARD_PRIVATE_DATA *prv);
 static int load_work_key_table(B_CAS_CARD_PRIVATE_DATA *prv, TCHAR *path);
 static uint64_t pickup_hex(char **pp, int n);
-static int decode_ecm(B_CAS_CARD_PRIVATE_DATA *prv, uint8_t *scramble_key, const ECM_TABLE *in)
+static int decode_ecm(B_CAS_CARD_PRIVATE_DATA *prv, uint8_t *scramble_key, const ECM_TABLE *in);
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  interface method implementation
