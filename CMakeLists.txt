@@ -22,12 +22,9 @@ enable_language("CXX")
 include(GitRevision)
 include(GenerateExportHeader)
 include(GNUInstallDirs)
-find_package(PCSC REQUIRED)
 
 if(UNIX OR MSYS)
 	find_program(LDCONFIG_EXECUTABLE "ldconfig")
-	set(WITH_PCSC_PACKAGE "libpcsclite" CACHE STRING "pkg-config package name for PC/SC")
-	set(WITH_PCSC_LIBRARY "" CACHE STRING "library name for PC/SC")
 endif()
 
 if(WIN32)
@@ -113,23 +110,18 @@ endif()
 
 add_definitions("-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64")
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-if(PCSC_INCLUDE_DIRS)
-	include_directories(${PCSC_INCLUDE_DIRS})
-endif()
-link_directories(${PCSC_LIBRARY_DIRS})
 
 # ---------- libaribb25 ----------
 
 if(WIN32 AND NOT CMAKE_SYSTEM_PROCESSOR MATCHES "(ARM|ARM64|AARCH64)")
-	add_library(aribb25-objlib OBJECT aribb25/arib_std_b25.c aribb25/b_cas_card.c aribb25/multi2.c aribb25/multi2_simd.c aribb25/ts_section_parser.c aribb25/version_b25.c)
+	add_library(aribb25-objlib OBJECT aribb25/arib_std_b25.c aribb25/b_cas_card.c aribb25/b_cas_crypt.c aribb25/multi2.c aribb25/multi2_simd.c aribb25/ts_section_parser.c aribb25/version_b25.c)
 else()
-	add_library(aribb25-objlib OBJECT aribb25/arib_std_b25.c aribb25/b_cas_card.c aribb25/multi2.cc aribb25/ts_section_parser.c aribb25/version_b25.c)
+	add_library(aribb25-objlib OBJECT aribb25/arib_std_b25.c aribb25/b_cas_card.c aribb25/b_cas_crypt.c aribb25/multi2.cc aribb25/ts_section_parser.c aribb25/version_b25.c)
 endif()
 set_target_properties(aribb25-objlib PROPERTIES COMPILE_DEFINITIONS ARIBB25_DLL)
 
 add_library(aribb25-static STATIC $<TARGET_OBJECTS:aribb25-objlib>)
 set_target_properties(aribb25-static PROPERTIES OUTPUT_NAME ${ARIBB25_LIB_NAME})
-target_link_libraries(aribb25-static PRIVATE ${PCSC_LIBRARIES})
 
 add_library(aribb25-shared SHARED $<TARGET_OBJECTS:aribb25-objlib> ${CMAKE_CURRENT_BINARY_DIR}/version_b25.rc)
 set_target_properties(aribb25-shared PROPERTIES MACOSX_RPATH ON)
@@ -138,13 +130,11 @@ set_target_properties(aribb25-shared PROPERTIES COMPILE_DEFINITIONS ARIBB25_DLL)
 set_target_properties(aribb25-shared PROPERTIES OUTPUT_NAME ${ARIBB25_LIB_NAME})
 set_target_properties(aribb25-shared PROPERTIES SOVERSION ${ARIBB25_MAJOR_VERSION})
 set_target_properties(aribb25-shared PROPERTIES VERSION ${ARIBB25_VERSION_NUMBER})
-target_link_libraries(aribb25-shared PRIVATE ${PCSC_LIBRARIES})
 
 # ---------- b25 (executable) ----------
 
 add_executable(b25 aribb25/td.c ${CMAKE_CURRENT_BINARY_DIR}/version_b25.rc)
 set_target_properties(b25 PROPERTIES OUTPUT_NAME ${ARIBB25_CMD_NAME})
-target_link_libraries(b25 PRIVATE ${PCSC_LIBRARIES})
 target_link_libraries(b25 PRIVATE aribb25-shared)
 
 configure_file(aribb25/config.h.in config.h @ONLY)
@@ -154,7 +144,6 @@ configure_file(aribb25/version_b25.rc.in version_b25.rc @ONLY)
 
 add_executable(arib-b25-stream-test aribb25/td.c ${CMAKE_CURRENT_BINARY_DIR}/version_b25.rc)
 set_target_properties(arib-b25-stream-test PROPERTIES OUTPUT_NAME ${ARIBB25_STREAM_TEST_NAME})
-target_link_libraries(arib-b25-stream-test PRIVATE ${PCSC_LIBRARIES})
 target_link_libraries(arib-b25-stream-test PRIVATE aribb25-shared)
 target_compile_definitions(arib-b25-stream-test PRIVATE ENABLE_ARIB_STREAM_TEST)
 
@@ -177,7 +166,7 @@ if(UNIX AND NOT CYGWIN)
 	install(TARGETS arib-b25-stream-test RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	install(TARGETS aribb25-static aribb25-shared ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 	install(DIRECTORY DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/aribb25)
-	install(FILES aribb25/arib_std_b25_error_code.h aribb25/arib_std_b25.h aribb25/b_cas_card_error_code.h aribb25/b_cas_card.h aribb25/multi2.h aribb25/portable.h aribb25/simd_instruction_type.h aribb25/ts_common_types.h aribb25/ts_section_parser_error_code.h aribb25/ts_section_parser.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/aribb25)
+	install(FILES aribb25/arib_std_b25_error_code.h aribb25/arib_std_b25.h aribb25/b_cas_card_error_code.h aribb25/b_cas_card.h aribb25/b_cas_crypt.h aribb25/multi2.h aribb25/portable.h aribb25/simd_instruction_type.h aribb25/ts_common_types.h aribb25/ts_section_parser_error_code.h aribb25/ts_section_parser.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/aribb25)
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${ARIBB25_LIB_NAME}.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/symlink-${CMAKE_SHARED_LIBRARY_PREFIX}${ARIBB25_LIB_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR} RENAME ${CMAKE_SHARED_LIBRARY_PREFIX}arib25${CMAKE_SHARED_LIBRARY_SUFFIX})
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/symlink-${ARIBB25_LIB_NAME} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} RENAME arib25)
@@ -212,7 +201,6 @@ if(UNIX AND NOT CYGWIN AND NOT APPLE)
 	set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 	set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 	set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")  # ref: https://stackoverflow.com/a/59202791/17124142
-	set(CPACK_DEBIAN_PACKAGE_DEPENDS "libpcsclite1 (>= 1.8.23)")
 	SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "tsukumi <tsukumijima@users.noreply.github.com>")
 	set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 	include(CPack)

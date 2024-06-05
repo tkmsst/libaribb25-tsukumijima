@@ -48,7 +48,7 @@ typedef struct {
 	int (* get_program_count)(void *std_b25);
 	int (* get_program_info)(void *std_b25, ARIB_STD_B25_PROGRAM_INFO *info, int32_t idx);
 
-	int (*withdraw)(void *std_b25, ARIB_STD_B25_BUFFER *buf);
+	int (* withdraw)(void *std_b25, ARIB_STD_B25_BUFFER *buf);
 
 } ARIB_STD_B25;
 

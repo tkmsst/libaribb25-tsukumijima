@@ -46,6 +46,19 @@ typedef struct {
 } B_CAS_ECM_RESULT;
 
 typedef struct {
+	uint8_t  protocol_number;
+	uint8_t  broadcast_group_id;
+	uint8_t  work_key_id;
+	uint8_t  scramble_key[16];
+} ECM_TABLE;
+
+typedef struct {
+	uint8_t  broadcast_group_id;
+	uint8_t  work_key_id;
+	uint8_t  work_key[16];
+} WORK_KEY_TABLE;
+
+typedef struct {
 
 	void *private_data;
 

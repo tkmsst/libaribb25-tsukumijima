@@ -30,6 +30,9 @@
     <ClCompile Include="b_cas_card.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="b_cas_crypt.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="multi2_simd.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -45,6 +48,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="b_cas_card_error_code.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="b_cas_crypt.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="multi2.h">
