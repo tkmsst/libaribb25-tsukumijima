@@ -14,9 +14,6 @@
 #  define CONF ".ini"
 #else
 #  include <dlfcn.h>
-#  if !defined(__CYGWIN__)
-#    include <wintypes.h>
-#  endif
 #  if defined(DEBUG)
 #    include <stdio.h>
 #  endif
