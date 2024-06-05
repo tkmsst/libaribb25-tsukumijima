@@ -2,10 +2,9 @@
 #include "b_cas_card_error_code.h"
 #include "b_cas_crypt.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <math.h>
 
 #if defined(_WIN32)
 #  include <tchar.h>
@@ -13,14 +12,15 @@
 #  include <winscard.h>
 #  define CONF ".ini"
 #else
+#  define __USE_GNU
 #  include <dlfcn.h>
+#  include <limits.h>
 #  if defined(DEBUG)
 #    include <stdio.h>
 #  endif
 #  define TCHAR char
 #  define _T(x) x
 #  define _tfopen fopen
-#  define __USE_GNU
 #  define CONF ".conf"
 #endif
 
@@ -55,8 +55,6 @@ typedef struct {
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  constant values
  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-static const char LIB_DIR[] = "/usr/local/lib/";
-
 static const uint8_t BCAS_SYSTEM_KEY[] = {
 	0x36, 0x31, 0x04, 0x66, 0x4b, 0x17, 0xea, 0x5c,
 	0x32, 0xdf, 0x9c, 0xf5, 0xc4, 0xc3, 0x6c, 0x1b,
@@ -314,11 +312,12 @@ static void teardown(B_CAS_CARD_PRIVATE_DATA *prv)
 	}
 }
 
-static int load_work_key_table(B_CAS_CARD_PRIVATE_DATA *prv, TCHAR *path);
+static int load_work_key_table(B_CAS_CARD_PRIVATE_DATA *prv, TCHAR *path)
 {
 	int i = 0;
 	char buf[256];
-	uint8_t gid
+	uint8_t gid;
+	FILE *fp;
 
 	fp = _tfopen(path, _T("r"));
 	if(fp == NULL){
