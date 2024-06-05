@@ -25,8 +25,6 @@ jobs:
           mkdir libaribb25/64bit/
           Copy-Item -Path ".\Win32\Release\*" -Destination ".\libaribb25\32bit\" -Recurse -Force
           Copy-Item -Path ".\x64\Release\*" -Destination ".\libaribb25\64bit\" -Recurse -Force
-          Copy-Item -Path libaribb25\32bit\libaribb1.dll -Destination libaribb25\32bit\B1Decoder.dll -Force
-          Copy-Item -Path libaribb25\64bit\libaribb1.dll -Destination libaribb25\64bit\B1Decoder.dll -Force
           Copy-Item -Path libaribb25\32bit\libaribb25.dll -Destination libaribb25\32bit\B25Decoder.dll -Force
           Copy-Item -Path libaribb25\64bit\libaribb25.dll -Destination libaribb25\64bit\B25Decoder.dll -Force
           7z a -tzip ${{ steps.get_output_name.outputs.archive_path }} libaribb25
