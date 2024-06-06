@@ -130,7 +130,7 @@ set_target_properties(aribb25-shared PROPERTIES COMPILE_DEFINITIONS ARIBB25_DLL)
 set_target_properties(aribb25-shared PROPERTIES OUTPUT_NAME ${ARIBB25_LIB_NAME})
 set_target_properties(aribb25-shared PROPERTIES SOVERSION ${ARIBB25_MAJOR_VERSION})
 set_target_properties(aribb25-shared PROPERTIES VERSION ${ARIBB25_VERSION_NUMBER})
-target_link_libraries(arib25-shared PRIVATE ${CMAKE_DL_LIBS})
+target_link_libraries(aribb25-shared PRIVATE ${CMAKE_DL_LIBS})
 
 # ---------- b25 (executable) ----------
 
@@ -184,7 +184,7 @@ elseif(WIN32)
 
 	install(TARGETS b25 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 	install(TARGETS aribb25-static aribb25-shared ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
-	install(FILES aribb25/arib_std_b25_error_code.h aribb25/arib_std_b25.h aribb25/b_cas_card_error_code.h aribb25/b_cas_card.h aribb25/multi2.h aribb25/portable.h aribb25/simd_instruction_type.h aribb25/ts_common_types.h aribb25/ts_section_parser_error_code.h aribb25/ts_section_parser.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/aribb25)
+	install(FILES aribb25/arib_std_b25_error_code.h aribb25/arib_std_b25.h aribb25/b_cas_card_error_code.h aribb25/b_cas_card.h aribb25/b_cas_crypt.h aribb25/multi2.h aribb25/portable.h aribb25/simd_instruction_type.h aribb25/ts_common_types.h aribb25/ts_section_parser_error_code.h aribb25/ts_section_parser.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/aribb25)
 
 	add_custom_target(uninstall ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Uninstall.cmake)
 
