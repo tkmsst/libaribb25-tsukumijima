@@ -3,14 +3,12 @@
 #include "b_cas_crypt.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #if defined(_WIN32)
 #  include <tchar.h>
 #  include <windows.h>
 #  include <winscard.h>
-#  define CONF ".ini"
 #else
 #  define __USE_GNU
 #  include <dlfcn.h>
@@ -21,13 +19,14 @@
 #  define TCHAR char
 #  define _T(x) x
 #  define _tfopen fopen
-#  define CONF ".conf"
 #endif
 
 #if defined(_WIN32)
 	// ref: https://stackoverflow.com/a/6924293/17124142
 	EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 #endif
+
+#define CONF_FILE "libaribb25.conf"
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  inner structures
@@ -148,11 +147,11 @@ static int init_b_cas_card(void *bcas)
 
 	teardown(prv);
 
+// このライブラリと拡張子なしファイル名が同じ conf ファイルのパスを取得
 #if defined(_WIN32)
-	// この dll/exe と拡張子なしファイル名が同じ conf ファイルのパスを取得
 	TCHAR conf_file_path[MAX_PATH];
 	GetModuleFileName((HINSTANCE)&__ImageBase, conf_file_path, MAX_PATH);
-	_tcscpy_s(_tcsrchr(conf_file_path, _T('.')), MAX_PATH - _tcslen(_T(CONF)) - 1, _T(CONF));
+	_tcscpy_s(_tcsinc(_tcsrchr(conf_file_path, _T('\\'))), MAX_PATH, _T(CONF_FILE));
 
 	OutputDebugString(_T("libaribb25: conf file path:"));
 	OutputDebugString(conf_file_path);
@@ -162,10 +161,10 @@ static int init_b_cas_card(void *bcas)
 	if(dladdr((void *)init_b_cas_card, &info) == 0){
 		return B_CAS_CARD_ERROR_INVALID_PARAMETER;
 	}
-	strncpy(conf_file_path, info.dli_fname, PATH_MAX);
-	conf_file_path[PATH_MAX - strlen(CONF) - 1] = '\0';
-	strcat(conf_file_path, CONF);
+	strcpy(conf_file_path, info.dli_fname);
+	strcpy(strrchr(conf_file_path, '/')+1, CONF_FILE);
 #endif
+
 	n = load_work_key_table(prv, conf_file_path);
 	if(n < 0){
 		return n;
@@ -314,10 +313,10 @@ static void teardown(B_CAS_CARD_PRIVATE_DATA *prv)
 
 static int load_work_key_table(B_CAS_CARD_PRIVATE_DATA *prv, TCHAR *path)
 {
+	FILE *fp;
 	int i = 0;
 	char buf[256];
 	uint8_t gid;
-	FILE *fp;
 
 	fp = _tfopen(path, _T("r"));
 	if(fp == NULL){
@@ -330,6 +329,13 @@ static int load_work_key_table(B_CAS_CARD_PRIVATE_DATA *prv, TCHAR *path)
 		}
 
 		char *p = buf;
+		while(*p == ' ' || *p == '\t'){
+			p++;
+		}
+		if(*p < '0' || (*p > '9' && *p < 'A') || (*p > 'F' && *p < 'a') || *p > 'f'){
+			continue;
+		}
+
 		gid = pickup_hex(&p, 2) & 0xff;
 		if(gid == 0){
 			continue;
