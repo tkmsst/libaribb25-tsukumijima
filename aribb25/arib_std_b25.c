@@ -444,6 +444,8 @@ static void extract_emm_fixed_part(EMM_FIXED_PART *dst, uint8_t *src);
 static uint8_t *resync(uint8_t *head, uint8_t *tail, int32_t unit);
 static uint8_t *resync_force(uint8_t *head, uint8_t *tail, int32_t unit);
 
+static void fill_random_bytes(uint8_t *data, size_t size);
+
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  interface method implementation
  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -3022,6 +3024,16 @@ static uint8_t *resync_force(uint8_t *head, uint8_t *tail, int32_t unit_size)
 	}
 
 	return NULL;
+}
+
+void fill_random_bytes(uint8_t *data, size_t size)
+{
+	uint8_t mask = 0xFF;
+
+	srand(1234);
+	for(size_t i=0;i<size;i++){
+		data[i] = (uint8_t)(rand() & mask);
+	}
 }
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
