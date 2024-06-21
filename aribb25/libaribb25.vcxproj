@@ -163,6 +163,7 @@
   <ItemGroup>
     <ClCompile Include="arib_std_b25.c" />
     <ClCompile Include="b_cas_card.c" />
+    <ClCompile Include="b_cas_crypt.c" />
     <ClCompile Include="libaribb25.cpp" />
     <ClCompile Include="multi2.c" />
     <ClCompile Include="multi2_simd.c" />
@@ -173,6 +174,7 @@
     <ClInclude Include="arib_std_b25_error_code.h" />
     <ClInclude Include="b_cas_card.h" />
     <ClInclude Include="b_cas_card_error_code.h" />
+    <ClInclude Include="b_cas_crypt.h" />
     <ClInclude Include="IB25Decoder.h" />
     <ClInclude Include="libaribb25.h" />
     <ClInclude Include="multi2.h" />
